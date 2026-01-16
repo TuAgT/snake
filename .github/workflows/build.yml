@@ -69,39 +69,35 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: [x86_64]
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          update: false
+          msystem: MINGW64
+          update: true
           install: >
-            mingw-w64-${{ matrix.arch }}-ncurses
-            mingw-w64-${{ matrix.arch }}-cmake
-            mingw-w64-${{ matrix.arch }}-gcc
-          pacman-args: --noconfirm
+            mingw-w64-ucrt-x86_64-ncurses
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-gcc
       - name: Build with MSYS2
         shell: msys2 {0}
         run: |
           mkdir -p build
           cd build
-          cmake .. -G "MinGW Makefiles"
-          mingw32-make
+          cmake .. -G "Unix Makefiles"
+          make
       - name: Package build artifacts
         shell: msys2 {0}
         run: |
           mkdir -p artifacts
-          cp bin/snake.exe artifacts/snake-windows-${{ matrix.arch }}.exe
-          zip -r snake-windows-${{ matrix.arch }}.zip artifacts/
+          cp bin/snake.exe artifacts/snake-windows-x86_64.exe
+          zip -r snake-windows-x86_64.zip artifacts/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: snake-windows-${{ matrix.arch }}
-          path: snake-windows-${{ matrix.arch }}.zip
+          name: snake-windows-x86_64
+          path: snake-windows-x86_64.zip
 
   release:
     needs: [build-linux, build-macos, build-windows]
