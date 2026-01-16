@@ -100,7 +100,7 @@ jobs:
   #         path: snake-windows-x86_64.zip
 
   release:
-    needs: [build-linux, build-macos, build-windows]
+    needs: [build-linux, build-macos]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
