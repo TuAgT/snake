@@ -3,7 +3,7 @@
 [![Language](https://img.shields.io/badge/Language-C-blue)](<https://en.wikipedia.org/wiki/C_(programming_language)>)
 [![Library](https://img.shields.io/badge/Library-ncurses-green)](https://en.wikipedia.org/wiki/Ncurses)
 [![Build](https://img.shields.io/badge/Build-CMake%20%26%20Makefile-orange)](https://cmake.org/)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%26%20macOS-lightgrey)](https://github.com/)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%26%20macOS%20%26%20Windows-lightgrey)](https://github.com/)
 
 这是一个基于 C 语言的贪吃蛇游戏，使用 ncurses 库实现控制台界面。本项目由 AI 辅助生成和开发。
 
@@ -29,6 +29,8 @@
 ```bash
 sudo apt-get install libncurses5-dev libncursesw5-dev  # Ubuntu/Debian
 brew install ncurses  # macOS
+# Windows 使用 MSYS2 安装
+pacman -S mingw-w64-x86_64-ncurses mingw-w64-arm64-ncurses  # MSYS2
 ```
 
 需要安装 CMake：
@@ -36,9 +38,13 @@ brew install ncurses  # macOS
 ```bash
 sudo apt-get install cmake  # Ubuntu/Debian
 brew install cmake  # macOS
+# Windows 使用 MSYS2 安装
+pacman -S mingw-w64-x86_64-cmake mingw-w64-arm64-cmake  # MSYS2
 ```
 
 ### 使用 CMake 编译和运行
+
+**Linux/macOS：**
 
 ```bash
 # 创建构建目录
@@ -56,7 +62,27 @@ cd ..
 ./bin/snake
 ```
 
+**Windows（MSYS2）：**
+
+```bash
+# 创建构建目录
+mkdir -p build
+
+# 进入构建目录并生成 Makefile
+cd build
+cmake .. -G "MinGW Makefiles"
+
+# 编译项目
+mingw32-make
+
+# 返回根目录并运行游戏
+cd ..
+./bin/snake.exe
+```
+
 ### 使用传统 Makefile 编译和运行
+
+**Linux/macOS：**
 
 ```bash
 # 编译项目
@@ -66,26 +92,39 @@ make
 ./bin/snake
 ```
 
+**Windows（MSYS2）：**
+
+```bash
+# 编译项目
+mingw32-make
+
+# 运行游戏
+./bin/snake.exe
+```
+
 ### 清理构建文件
 
 **使用 CMake 时：**
 
 ```bash
 rm -rf build
-rm -f bin/snake
+rm -f bin/snake  # Linux/macOS
+rm -f bin/snake.exe  # Windows
 ```
 
 **使用传统 Makefile 时：**
 
 ```bash
-make clean
+make clean  # Linux/macOS
+mingw32-make clean  # Windows
 ```
 
 或者手动清理：
 
 ```bash
 rm -rf build obj
-rm -f bin/snake
+rm -f bin/snake  # Linux/macOS
+rm -f bin/snake.exe  # Windows
 ```
 
 ## 文件结构

@@ -41,8 +41,10 @@
 
 6. **CI/CD 要求**：
    - 配置 GitHub Actions 实现自动化构建
-   - 支持 Linux 和 macOS 平台
+   - 支持 Linux、macOS 和 Windows 平台
+   - 支持 x86_64 和 arm64 架构
    - 自动运行 CMake 和 Makefile 构建
+   - 实现构建产物的自动打包和发布
 
 ## 技术栈
 
@@ -51,6 +53,8 @@
 - 构建工具：CMake 和 Makefile
 - 测试：自定义测试框架
 - CI/CD：GitHub Actions
+- 平台：Linux、macOS、Windows
+- 架构：x86_64、arm64
 
 ## 项目结构
 
@@ -65,6 +69,8 @@ Snake/
 ├── build/            # CMake构建目录
 ├── obj/              # Makefile构建目录
 ├── test/             # 测试文件目录
+├── doc/              # 文档目录
+│   └── project_prompt.md  # 项目开发提示词
 ├── CMakeLists.txt    # CMake配置文件
 ├── Makefile          # Makefile配置文件
 ├── README.md         # 项目说明文档
@@ -83,6 +89,8 @@ Snake/
 
 ## 编译和运行
 
+### Linux/macOS x86_64/arm64
+
 ```bash
 # 使用CMake
 mkdir -p build
@@ -100,17 +108,39 @@ make
 make test
 ```
 
+### Windows x86_64/arm64 (MSYS2)
+
+```bash
+# 使用CMake
+mkdir -p build
+cd build
+cmake .. -G "MinGW Makefiles"
+mingw32-make
+cd ..
+./bin/snake.exe
+
+# 使用Makefile
+mingw32-make
+./bin/snake.exe
+
+# 运行测试
+mingw32-make test
+```
+
 ## 清理命令
 
 ```bash
 # 使用CMake
 rm -rf build
-rm -f bin/snake
+rm -f bin/snake  # Linux/macOS
+rm -f bin/snake.exe  # Windows
 
 # 使用Makefile
-make clean
+make clean  # Linux/macOS
+mingw32-make clean  # Windows
 
 # 通用清理
 rm -rf build obj
-rm -f bin/snake
+rm -f bin/snake  # Linux/macOS
+rm -f bin/snake.exe  # Windows
 ```

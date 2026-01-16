@@ -5,26 +5,51 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  release:
+    types: [created]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
 
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU for cross-compilation (arm64)
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
       - name: Install dependencies
         run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
       - name: CMake Build
         run: |
           mkdir -p build
           cd build
-          cmake ..
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            cmake .. -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=arm64
+          else
+            cmake ..
+          fi
           make
       - name: Make Build
         run: make
+      - name: Package build artifacts
+        run: |
+          mkdir -p artifacts
+          cp bin/snake artifacts/snake-linux-${{ matrix.arch }}
+          zip -r snake-linux-${{ matrix.arch }}.zip artifacts/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-linux-${{ matrix.arch }}
+          path: snake-linux-${{ matrix.arch }}.zip
 
   build-macos:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
 
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +59,71 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake ..
+          cmake .. -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
           make
       - name: Make Build
         run: make
+      - name: Package build artifacts
+        run: |
+          mkdir -p artifacts
+          cp bin/snake artifacts/snake-macos-${{ matrix.arch }}
+          zip -r snake-macos-${{ matrix.arch }}.zip artifacts/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-macos-${{ matrix.arch }}
+          path: snake-macos-${{ matrix.arch }}.zip
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >
+            mingw-w64-${{ matrix.arch }}-ncurses
+            mingw-w64-${{ matrix.arch }}-cmake
+            mingw-w64-${{ matrix.arch }}-gcc
+      - name: Build with MSYS2
+        shell: msys2 {0}
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -G "MinGW Makefiles"
+          mingw32-make
+      - name: Package build artifacts
+        shell: msys2 {0}
+        run: |
+          mkdir -p artifacts
+          cp bin/snake.exe artifacts/snake-windows-${{ matrix.arch }}.exe
+          zip -r snake-windows-${{ matrix.arch }}.zip artifacts/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-windows-${{ matrix.arch }}
+          path: snake-windows-${{ matrix.arch }}.zip
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: List artifacts
+        run: ls -la artifacts/*
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
