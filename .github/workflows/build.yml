@@ -21,7 +21,7 @@ jobs:
         if: matrix.arch == 'arm64'
         uses: docker/setup-qemu-action@v3
       - name: Install dependencies
-        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
+        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake gcc-aarch64-linux-gnu
       - name: CMake Build
         run: |
           mkdir -p build
