@@ -85,8 +85,8 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -G "Unix Makefiles"
-          make
+          /ucrt64/bin/cmake .. -G "Unix Makefiles"
+          /ucrt64/bin/make
       - name: Package build artifacts
         shell: msys2 {0}
         run: |
