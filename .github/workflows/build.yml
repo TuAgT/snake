@@ -67,37 +67,37 @@ jobs:
           name: snake-macos-${{ matrix.arch }}
           path: snake-macos-${{ matrix.arch }}.zip
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >
-            mingw-w64-x86_64-ncurses
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-gcc
-      - name: Build with MSYS2
-        shell: msys2 {0}
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc
-          mingw32-make
-      - name: Package build artifacts
-        shell: msys2 {0}
-        run: |
-          mkdir -p artifacts
-          cp bin/snake.exe artifacts/snake-windows-x86_64.exe
-          zip -r snake-windows-x86_64.zip artifacts/
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: snake-windows-x86_64
-          path: snake-windows-x86_64.zip
+  # build-windows:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up MSYS2
+  #       uses: msys2/setup-msys2@v2
+  #       with:
+  #         msystem: MINGW64
+  #         update: true
+  #         install: >
+  #           mingw-w64-x86_64-ncurses
+  #           mingw-w64-x86_64-cmake
+  #           mingw-w64-x86_64-gcc
+  #     - name: Build with MSYS2
+  #       shell: msys2 {0}
+  #       run: |
+  #         mkdir -p build
+  #         cd build
+  #         cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc
+  #         mingw32-make
+  #     - name: Package build artifacts
+  #       shell: msys2 {0}
+  #       run: |
+  #         mkdir -p artifacts
+  #         cp bin/snake.exe artifacts/snake-windows-x86_64.exe
+  #         zip -r snake-windows-x86_64.zip artifacts/
+  #     - name: Upload artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: snake-windows-x86_64
+  #         path: snake-windows-x86_64.zip
 
   release:
     needs: [build-linux, build-macos, build-windows]
