@@ -1,0 +1,40 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
+      - name: CMake Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make
+      - name: Make Build
+        run: make
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install ncurses cmake
+      - name: CMake Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make
+      - name: Make Build
+        run: make

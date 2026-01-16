@@ -1,0 +1,22 @@
+# 构建目录
+/build/
+/obj/
+/bin/
+
+# 可执行文件
+*.out
+*.exe
+/snake
+
+# IDE配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 测试临时文件
+/test/snake_test
