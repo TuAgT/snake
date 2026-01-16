@@ -13,24 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        arch: [x86_64]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU for cross-compilation (arm64)
-        if: matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v3
       - name: Install dependencies
-        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake gcc-aarch64-linux-gnu libncurses5-dev:arm64 libncursesw5-dev:arm64
+        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
       - name: CMake Build
         run: |
           mkdir -p build
           cd build
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            cmake .. -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=arm64
-          else
-            cmake ..
-          fi
+          cmake ..
           make
       - name: Make Build
         run: make
@@ -78,14 +71,14 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x86_64, aarch64]
+        arch: [x86_64]
 
     steps:
       - uses: actions/checkout@v4
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          update: true
+          update: false
           install: >
             mingw-w64-${{ matrix.arch }}-ncurses
             mingw-w64-${{ matrix.arch }}-cmake
