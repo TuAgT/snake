@@ -77,16 +77,16 @@ jobs:
           msystem: MINGW64
           update: true
           install: >
-            mingw-w64-ucrt-x86_64-ncurses
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-x86_64-ncurses
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
       - name: Build with MSYS2
         shell: msys2 {0}
         run: |
           mkdir -p build
           cd build
-          /ucrt64/bin/cmake .. -G "Unix Makefiles"
-          /ucrt64/bin/make
+          cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc
+          mingw32-make
       - name: Package build artifacts
         shell: msys2 {0}
         run: |
