@@ -21,7 +21,7 @@ jobs:
         if: matrix.arch == 'arm64'
         uses: docker/setup-qemu-action@v3
       - name: Install dependencies
-        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake gcc-aarch64-linux-gnu
+        run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake gcc-aarch64-linux-gnu libncurses5-dev:arm64 libncursesw5-dev:arm64
       - name: CMake Build
         run: |
           mkdir -p build
@@ -78,7 +78,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        arch: [x86_64, aarch64]
 
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +90,7 @@ jobs:
             mingw-w64-${{ matrix.arch }}-ncurses
             mingw-w64-${{ matrix.arch }}-cmake
             mingw-w64-${{ matrix.arch }}-gcc
+          pacman-args: --noconfirm
       - name: Build with MSYS2
         shell: msys2 {0}
         run: |
