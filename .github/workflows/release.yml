@@ -7,12 +7,6 @@
 name: Release
 
 on:
-  # 当Build工作流成功完成后触发（自动模式）
-  workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
-    branches: [main]
   # 当推送以v开头的标签时触发（手动标签模式）
   push:
     tags: [v*]
