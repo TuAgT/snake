@@ -4,6 +4,7 @@
 [![Library](https://img.shields.io/badge/Library-ncurses-green)](https://en.wikipedia.org/wiki/Ncurses)
 [![Build](https://img.shields.io/badge/Build-CMake%20%26%20Makefile-orange)](https://cmake.org/)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%26%20macOS%20%26%20Windows-lightgrey)](https://github.com/)
+[![Trae AI](https://img.shields.io/badge/IDE-Trae%20AI-brightgreen)](https://trae.ai/)
 
 This is a Snake game implemented in C language using the ncurses library for the console interface. This project is generated and developed with AI assistance.
 
