@@ -27,9 +27,9 @@
 
 3. **构建系统**：
 
-   - 同时支持 Makefile 和 CMake 两种构建方式
+   - 使用 CMake 作为构建工具
    - 确保编译过程中不留下多余文件在根目录
-   - 中间文件应放在 build 或 obj 目录中
+   - 中间文件应放在 build 目录中
    - 可执行文件放在 bin 目录中
 
 4. **文档要求**：
@@ -41,21 +41,20 @@
 5. **测试要求**：
 
    - 编写单元测试测试核心功能
-   - 支持使用 make test 命令运行测试
    - 测试覆盖初始化、食物生成、碰撞检测和移动功能
 
 6. **CI/CD 要求**：
    - 配置 GitHub Actions 实现自动化构建
    - 支持 Linux、macOS 和 Windows 平台
    - 支持 x86_64 和 arm64 架构
-   - 自动运行 CMake 和 Makefile 构建
+   - 自动运行 CMake 构建
    - 实现构建产物的自动打包和发布
 
 ## 技术栈
 
 - 语言：C
 - 库：ncurses
-- 构建工具：CMake 和 Makefile
+- 构建工具：CMake
 - 测试：自定义测试框架
 - CI/CD：GitHub Actions
 - 平台：Linux、macOS、Windows
@@ -72,14 +71,19 @@ Snake/
 │   └── snake.h       # 数据结构和函数声明
 ├── bin/              # 可执行文件目录
 ├── build/            # CMake构建目录
-├── obj/              # Makefile构建目录
 ├── test/             # 测试文件目录
 ├── doc/              # 文档目录
-│   └── project_prompt.md  # 项目开发提示词
+│   ├── project_prompt.md  # 项目开发提示词（中文）
+│   └── project_prompt_en.md  # 项目开发提示词（英文）
 ├── CMakeLists.txt    # CMake配置文件
-├── Makefile          # Makefile配置文件
-├── README.md         # 项目说明文档
-└── .github/workflows/build.yml  # GitHub Actions配置
+├── LICENSE           # 许可证文件
+├── README.md         # 项目说明文档（中文）
+├── README_en.md      # 项目说明文档（英文）
+├── .github/          # GitHub配置目录
+│   └── workflows/    # GitHub Actions工作流配置
+│       ├── build.yml    # 构建工作流
+│       └── release.yml  # 发布工作流
+└── .gitignore        # Git忽略文件配置
 ```
 
 ## 实现要点
@@ -90,62 +94,46 @@ Snake/
 4. **随机种子管理**：将 srand 调用放在初始化函数中，避免重复种子
 5. **内存管理**：确保蛇移动时正确释放和分配内存
 6. **测试设计**：针对核心功能设计独立的测试用例
-7. **构建配置**：确保两种构建方式生成的文件路径一致
+7. **构建配置**：确保 CMake 构建生成的文件路径正确
 
 ## 编译和运行
 
 ### Linux/macOS x86_64/arm64
 
 ```bash
-# 使用CMake
+# 使用CMake构建
 mkdir -p build
 cd build
 cmake ..
 make
-cd ..
-./bin/snake
 
-# 使用Makefile
-make
-./bin/snake
-
-# 运行测试
-make test
+# 运行游戏
+../bin/snake
 ```
 
 ### Windows x86_64/arm64 (MSYS2)
 
 ```bash
-# 使用CMake
+# 使用CMake构建
 mkdir -p build
 cd build
 cmake .. -G "MinGW Makefiles"
 mingw32-make
-cd ..
-./bin/snake.exe
 
-# 使用Makefile
-mingw32-make
-./bin/snake.exe
-
-# 运行测试
-mingw32-make test
+# 运行游戏
+../bin/snake.exe
 ```
 
 ## 清理命令
 
 ```bash
-# 使用CMake
+# 使用CMake清理构建文件
 rm -rf build
 rm -f bin/snake  # Linux/macOS
 rm -f bin/snake.exe  # Windows
 
-# 使用Makefile
-make clean  # Linux/macOS
-mingw32-make clean  # Windows
-
 # 通用清理
-rm -rf build obj
+rm -rf build
 rm -f bin/snake  # Linux/macOS
 rm -f bin/snake.exe  # Windows
 ```
