@@ -47,6 +47,7 @@ jobs:
       # 构建项目（amd64架构）
       - name: Build for amd64
         run: |
+          rm -rf bin/  # 清理bin目录
           mkdir -p build-amd64
           cd build-amd64
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
@@ -54,16 +55,20 @@ jobs:
           cd ..
           ls -la bin/ || echo "bin directory not found"
 
-      # 保存amd64构建产物
-      - name: Save amd64 artifact
+      # 打包amd64构建产物
+      - name: Package amd64 artifact
         run: |
           mkdir -p artifacts
           cp bin/snake artifacts/snake-macos-amd64
-          rm bin/snake  # 清理bin目录，准备下一个架构的构建
+          cd artifacts
+          zip -r snake-macos-amd64.zip snake-macos-amd64
+          rm snake-macos-amd64
+          ls -la .
 
       # 构建项目（arm64架构）
       - name: Build for arm64
         run: |
+          rm -rf bin/  # 清理bin目录
           mkdir -p build-arm64
           cd build-arm64
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
@@ -71,23 +76,14 @@ jobs:
           cd ..
           ls -la bin/ || echo "bin directory not found"
 
-      # 保存arm64构建产物
-      - name: Save arm64 artifact
-        run: cp bin/snake artifacts/snake-macos-arm64
-
-      # 打包amd64构建产物
-      - name: Package amd64 artifact
-        run: |
-          cd artifacts
-          zip -r ../snake-macos-amd64.zip snake-macos-amd64
-          mv ../snake-macos-amd64.zip .
-
       # 打包arm64构建产物
       - name: Package arm64 artifact
         run: |
+          cp bin/snake artifacts/snake-macos-arm64
           cd artifacts
-          zip -r ../snake-macos-arm64.zip snake-macos-arm64
-          mv ../snake-macos-arm64.zip .
+          zip -r snake-macos-arm64.zip snake-macos-arm64
+          rm snake-macos-arm64
+          ls -la .
 
       # 检查下载的文件结构
       - name: Check downloaded files
@@ -98,11 +94,9 @@ jobs:
         run: |
           # 创建仓库压缩包，文件名包含标签名
           TAG_NAME="${{ steps.get_tag.outputs.tag_name || github.ref_name }}"
-          git archive --format=tar.gz --output=snake-source-${TAG_NAME}.tar.gz HEAD
-          # 确保artifacts目录存在
           mkdir -p artifacts
-          # 将源码压缩包移动到artifacts目录
-          mv snake-source-${TAG_NAME}.tar.gz artifacts/
+          git archive --format=tar.gz --output=artifacts/snake-source-${TAG_NAME}.tar.gz HEAD
+          ls -la artifacts/
 
       # 列出所有artifacts，用于调试
       - name: List all artifacts
