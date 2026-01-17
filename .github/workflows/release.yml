@@ -52,6 +52,14 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
           make -j$(nproc)
           cd ..
+          ls -la bin/ || echo "bin directory not found"
+
+      # 保存amd64构建产物
+      - name: Save amd64 artifact
+        run: |
+          mkdir -p artifacts
+          cp bin/snake artifacts/snake-macos-amd64
+          rm bin/snake  # 清理bin目录，准备下一个架构的构建
 
       # 构建项目（arm64架构）
       - name: Build for arm64
@@ -61,15 +69,15 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
           make -j$(nproc)
           cd ..
+          ls -la bin/ || echo "bin directory not found"
 
-      # 准备构建产物
-      - name: Prepare artifacts
-        run: mkdir -p artifacts
+      # 保存arm64构建产物
+      - name: Save arm64 artifact
+        run: cp bin/snake artifacts/snake-macos-arm64
 
       # 打包amd64构建产物
       - name: Package amd64 artifact
         run: |
-          cp build-amd64/bin/snake artifacts/snake-macos-amd64
           cd artifacts
           zip -r ../snake-macos-amd64.zip snake-macos-amd64
           mv ../snake-macos-amd64.zip .
@@ -77,7 +85,6 @@ jobs:
       # 打包arm64构建产物
       - name: Package arm64 artifact
         run: |
-          cp build-arm64/bin/snake artifacts/snake-macos-arm64
           cd artifacts
           zip -r ../snake-macos-arm64.zip snake-macos-arm64
           mv ../snake-macos-arm64.zip .
