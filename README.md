@@ -5,6 +5,11 @@
 [![Build](https://img.shields.io/badge/Build-CMake%20%26%20Makefile-orange)](https://cmake.org/)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%26%20macOS%20%26%20Windows-lightgrey)](https://github.com/)
 
+**语言/Language:**
+
+- [中文](README.md)
+- [English](README_en.md)
+
 这是一个基于 C 语言的贪吃蛇游戏，使用 ncurses 库实现控制台界面。本项目由 AI 辅助生成和开发。
 
 ## 游戏规则

@@ -1,5 +1,10 @@
 # 贪吃蛇游戏项目提示词
 
+**语言/Language:**
+
+- [中文](project_prompt.md)
+- [English](project_prompt_en.md)
+
 ## 项目概述
 
 创建一个基于 C 语言的贪吃蛇游戏，使用 ncurses 库实现控制台界面。
