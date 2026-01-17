@@ -88,7 +88,7 @@ jobs:
         if: startsWith(steps.get_tag.outputs.tag_name || github.ref_name, 'v')
         with:
           files: |
-            artifacts/snake-macos-*.zip  # macOS平台的二进制构建产物
+            artifacts/**/snake-macos-*.zip  # macOS平台的二进制构建产物（包括子目录中的文件）
             artifacts/snake-source-${{ steps.get_tag.outputs.tag_name || github.ref_name }}.tar.gz  # 源码包
           tag_name: ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
           name: Release ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
