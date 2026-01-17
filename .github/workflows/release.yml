@@ -36,6 +36,16 @@ jobs:
           # 获取与当前ref相关的构建产物
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
           path: artifacts
+          name: snake-macos-amd64
+
+      - name: Download arm64 artifacts from Build workflow
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          path: artifacts
+          name: snake-macos-arm64
 
       # 打包仓库源码为tar.gz文件
       - name: Package repository source code
@@ -57,8 +67,9 @@ jobs:
         if: startsWith(github.ref_name, 'v')
         with:
           files: |
-            artifacts/**/*.zip  # 所有平台的二进制构建产物
-            artifacts/*.tar.gz  # 源码包
+            artifacts/snake-macos-*.zip  # macOS平台的二进制构建产物
+            artifacts/snake-source-${{ github.ref_name }}.tar.gz  # 源码包
           tag_name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub自动提供的令牌
