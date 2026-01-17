@@ -106,9 +106,10 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
+          # 文件路径不能与注释在同一行，否则会导致匹配失败
           files: |
-            artifacts/snake-macos-*.zip  # macOS平台的二进制构建产物
-            artifacts/snake-source-${{ steps.get_tag.outputs.tag_name }}.tar.gz  # 源码包
+            artifacts/snake-macos-*.zip
+            artifacts/snake-source-${{ steps.get_tag.outputs.tag_name }}.tar.gz
           tag_name: ${{ steps.get_tag.outputs.tag_name }}
           name: Release ${{ steps.get_tag.outputs.tag_name }}
           draft: false
