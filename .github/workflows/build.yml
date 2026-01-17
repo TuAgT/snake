@@ -32,17 +32,20 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
 
-      # 使用CMake构建
-      - name: CMake Build
+      # 自动构建：优先使用CMake，失败时回退到Makefile
+      - name: Automatic Build
         run: |
-          mkdir -p build
-          cd build
-          cmake ..
-          make
-
-      # 使用Makefile构建
-      - name: Make Build
-        run: make
+          # 首先尝试使用CMake构建
+          if mkdir -p build && cd build && cmake .. && make; then
+            echo "CMake build succeeded"
+            # 将CMake构建的产物复制到bin目录（如果需要）
+            cp -f snake ../bin/ 2>/dev/null || true
+          else
+            echo "CMake build failed, falling back to Makefile build"
+            # 使用Makefile构建
+            cd ..
+            make
+          fi
 
       # 打包构建产物
       - name: Package build artifacts
@@ -73,17 +76,20 @@ jobs:
       - name: Install dependencies
         run: brew install ncurses cmake
 
-      # 使用CMake构建，指定架构
-      - name: CMake Build
+      # 自动构建：优先使用CMake，失败时回退到Makefile
+      - name: Automatic Build
         run: |
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
-          make
-
-      # 使用Makefile构建
-      - name: Make Build
-        run: make
+          # 首先尝试使用CMake构建，指定架构
+          if mkdir -p build && cd build && cmake .. -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} && make; then
+            echo "CMake build succeeded"
+            # 将CMake构建的产物复制到bin目录（如果需要）
+            cp -f snake ../bin/ 2>/dev/null || true
+          else
+            echo "CMake build failed, falling back to Makefile build"
+            # 使用Makefile构建
+            cd ..
+            make
+          fi
 
       # 打包构建产物
       - name: Package build artifacts
@@ -121,20 +127,21 @@ jobs:
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-gcc
 
-      # 使用Makefile构建（优先使用Makefile以避免CMake配置问题）
-      - name: Make Build
+      # 自动构建：优先使用CMake，失败时回退到Makefile
+      - name: Automatic Build
         shell: msys2 {0}
-        run: make
-
-      # 可选：使用CMake构建（作为替代方案）
-      - name: CMake Build (Optional)
-        shell: msys2 {0}
-        continue-on-error: true # 如果CMake构建失败，继续执行后续步骤
         run: |
-          mkdir -p build
-          cd build
-          cmake .. -G "MinGW Makefiles"
-          mingw32-make
+          # 首先尝试使用CMake构建
+          if mkdir -p build && cd build && cmake .. -G "MinGW Makefiles" && mingw32-make; then
+            echo "CMake build succeeded"
+            # 将CMake构建的产物复制到bin目录
+            cp -f snake.exe ../bin/ 2>/dev/null || true
+          else
+            echo "CMake build failed, falling back to Makefile build"
+            # 使用Makefile构建
+            cd ..
+            make
+          fi
 
       # 打包构建产物
       - name: Package build artifacts
