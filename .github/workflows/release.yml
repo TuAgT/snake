@@ -17,39 +17,74 @@ on:
 jobs:
   # 发布作业
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     # 只有在以下情况下才执行：
-    # 1. Build工作流成功完成
-    # 2. 创建了GitHub Release
-    # 3. 推送了以v开头的标签
+    # 1. 创建了GitHub Release
+    # 2. 推送了以v开头的标签
     if: |
       (github.event_name == 'release' && github.event.action == 'created') ||
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+    strategy:
+      fail-fast: false
+      matrix:
+        # 只保留macOS的amd64和arm64架构
+        arch: [amd64, arm64]
+        compiler: [gcc]
     steps:
-      # 检出代码（用于创建源码包）
+      # 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # 获取完整的git历史
 
-      # 当从workflow_run触发时，下载Build工作流的所有构建产物
-      - name: Download all artifacts from Build workflow
-        if: github.event_name == 'workflow_run'
-        uses: dawidd6/action-download-artifact@v2
+      # 设置CMake环境
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v2
         with:
-          workflow: build.yml
-          workflow_conclusion: success
-          path: artifacts
+          cmake-version: "latest"
 
-      # 当直接触发时（如推送标签或创建Release），直接下载当前workflow的artifacts
-      - name: Download all artifacts (direct)
-        if: github.event_name != 'workflow_run'
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+      # 安装macOS依赖
+      - name: Install dependencies (macOS)
+        run: brew install ncurses
 
-      # 打包仓库源码为tar.gz文件
+      # 配置构建目录
+      - name: Configure CMake
+        run: |
+          mkdir -p build
+          cd build
+          # 设置macOS架构
+          ARCH_FLAGS=""
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=arm64"
+          else
+            ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=x86_64"
+          fi
+          cmake .. -DCMAKE_BUILD_TYPE=Release $ARCH_FLAGS
+
+      # 执行构建
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      # 准备构建产物
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          # macOS平台可执行文件不带扩展名
+          cp bin/snake artifacts/snake-macos-${{ matrix.arch }}
+
+      # 打包构建产物
+      - name: Package artifacts
+        run: |
+          cd artifacts
+          zip -r ../snake-macos-${{ matrix.arch }}.zip snake-macos-${{ matrix.arch }}
+          # 将打包好的文件移动到artifacts目录
+          mv ../snake-macos-${{ matrix.arch }}.zip .
+
+      # 打包仓库源码为tar.gz文件（仅在amd64架构构建时执行）
       - name: Package repository source code
+        if: ${{ matrix.arch == 'amd64' }}
         run: |
           # 创建仓库压缩包，文件名包含标签/分支名
           git archive --format=tar.gz --output=snake-source-${GITHUB_REF_NAME}.tar.gz HEAD
@@ -60,14 +95,15 @@ jobs:
 
       # 列出所有artifacts，用于调试
       - name: List all artifacts
-        run: ls -la artifacts/*
+        run: ls -la artifacts/ || echo "No artifacts found"
 
       # 上传所有artifacts到GitHub Release
       - name: Upload release assets
+        if: ${{ matrix.arch == 'amd64' }}
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/**/*.zip  # 所有平台的二进制构建产物
-            artifacts/**/*.tar.gz  # 源码包
+            artifacts/*.zip  # 所有平台的二进制构建产物
+            artifacts/*.tar.gz  # 源码包
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub自动提供的令牌
