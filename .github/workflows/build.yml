@@ -63,7 +63,7 @@ jobs:
         run: |
           mkdir -p artifacts
           # macOS平台可执行文件不带扩展名
-          cp build/bin/snake artifacts/snake-macos-${{ matrix.arch }}
+          cp bin/snake artifacts/snake-macos-${{ matrix.arch }}
 
       # 打包构建产物
       - name: Package artifacts
