@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+    branches: [main]
+  push:
+    tags: [v*]
+  release:
+    types: [created]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'release' && github.event.action == 'created') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts from Build workflow
+        if: github.event_name == 'workflow_run'
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          path: artifacts
+
+      - name: Download all artifacts (direct)
+        if: github.event_name != 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package repository
+        run: |
+          # 创建仓库压缩包
+          git archive --format=tar.gz --output=snake-source-${GITHUB_REF_NAME}.tar.gz HEAD
+          # 确保artifacts目录存在
+          mkdir -p artifacts
+          # 将源码压缩包移动到artifacts目录
+          mv snake-source-${GITHUB_REF_NAME}.tar.gz artifacts/
+
+      - name: List artifacts
+        run: ls -la artifacts/*
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
