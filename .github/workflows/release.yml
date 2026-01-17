@@ -7,31 +7,20 @@
 name: Release
 
 on:
-  # 当Build工作流成功完成后触发（自动模式）
   workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
-  # 当推送以v开头的标签时触发（手动标签模式）
+    workflows: [Build]
+    types: [completed]
+    branches: [main]
+    tags: [v*]
   push:
     tags: [v*]
-  # 当创建GitHub Release时触发（手动Release模式）
-  release:
-    types: [created]
 
 jobs:
   # 发布作业
   release:
     runs-on: ubuntu-latest
-    # 只有在以下情况下才执行：
-    # 1. Build工作流成功完成
-    # 2. 创建了GitHub Release
-    # 3. 推送了以v开头的标签
-    # if: |
-    #   ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-    #   (github.event_name == 'release' && github.event.action == 'created') ||
-    #   (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
-    #   startsWith(github.ref_name, 'v')
+    # 只有在推送标签且Build工作流成功完成时才执行
+    if: startsWith(github.ref_name, 'v') && (github.event_name == 'push' || github.event.workflow_run.conclusion == 'success')
     steps:
       # 检出代码（用于创建源码包）
       - name: Checkout repository
@@ -70,5 +59,6 @@ jobs:
           files: |
             artifacts/**/*.zip  # 所有平台的二进制构建产物
             artifacts/*.tar.gz  # 源码包
+          token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub自动提供的令牌
