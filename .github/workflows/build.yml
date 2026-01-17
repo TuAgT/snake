@@ -20,18 +20,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 定义支持的操作系统和架构
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [x86_64]
-        # 根据操作系统设置编译器和构建工具
-        compiler: [gcc]
-        # 额外的矩阵配置
+        # 为每个OS和架构组合创建独立任务
         include:
-          # 为macOS添加arm64架构支持
+          # Linux平台架构支持
+          - os: ubuntu-latest
+            arch: amd64
+            compiler: gcc
+          - os: ubuntu-latest
+            arch: x86
+            compiler: gcc
+          - os: ubuntu-latest
+            arch: arm
+            compiler: gcc
+          # macOS平台架构支持
+          - os: macos-latest
+            arch: amd64
+            compiler: gcc
           - os: macos-latest
             arch: arm64
-          # Windows平台的编译器配置
+            compiler: gcc
+          # Windows平台架构支持
           - os: windows-latest
+            arch: amd64
             compiler: gcc
 
     steps:
@@ -47,7 +57,16 @@ jobs:
       # 安装依赖
       - name: Install dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libncurses5-dev libncursesw5-dev gcc g++
+        run: |
+          sudo apt-get update
+          # 基础依赖
+          sudo apt-get install -y libncurses5-dev libncursesw5-dev gcc g++ cmake
+
+          # 根据架构安装额外的交叉编译工具链
+          if [ "${{ matrix.arch }}" = "arm" ]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libncurses5-dev-armhf-cross
+          elif [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo apt-get install -y gcc-multilib g++-multilib lib32ncurses5-dev
 
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -72,8 +91,13 @@ jobs:
           else
             # Linux/macOS平台设置架构
             ARCH_FLAGS=""
+            # 处理不同架构名称映射
             if [ "${{ matrix.arch }}" = "arm64" ]; then
               ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=arm64"
+            elif [ "${{ matrix.arch }}" = "arm" ]; then
+              ARCH_FLAGS="-DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++"
+            elif [ "${{ matrix.arch }}" = "x86" ]; then
+              ARCH_FLAGS="-DCMAKE_C_COMPILER=gcc -m32 -DCMAKE_CXX_COMPILER=g++ -m32"
             fi
             cmake .. -DCMAKE_BUILD_TYPE=Release $ARCH_FLAGS
           fi
