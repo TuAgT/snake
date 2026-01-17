@@ -17,14 +17,17 @@ on:
 # 定义工作流所需的权限
 permissions:
   contents: write # 需要写入内容的权限以创建Release
-  packages: write # 可能需要的额外权限
 
 jobs:
   # 发布作业
   release:
-    runs-on: ubuntu-latest
-    # 只有在推送标签且Build工作流成功完成时才执行
-    if: startsWith(github.ref_name, 'v') && (github.event_name == 'push' || github.event.workflow_run.conclusion == 'success')
+    # 只在macOS上运行
+    runs-on: macos-latest
+
+    # 只在以下情况执行此任务：
+    # 1. 推送v开头的标签 (push事件)
+    # 2. 或者Build工作流成功完成且触发Build的事件是推送标签 (workflow_run事件)
+    if: (github.event_name == 'push' && startsWith(github.ref_name, 'v')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/v'))
     steps:
       # 检出代码（用于创建源码包）
       - name: Checkout repository
@@ -32,20 +35,33 @@ jobs:
         with:
           fetch-depth: 0 # 获取完整的git历史
 
+      # 获取当前事件的标签信息
+      - name: Get tag information
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # 从触发Build工作流的引用中提取标签名
+            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+            if [[ "$HEAD_BRANCH" == refs/tags/* ]]; then
+              TAG_NAME=${HEAD_BRANCH#refs/tags/}
+              echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            fi
+          fi
+
       # 下载Build工作流生成的所有平台构建产物
       - name: Download all artifacts from Build workflow
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v2
         with:
-          name: snake-macos-amd64
+          workflow: build.yml
+          workflow_conclusion: success
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           path: artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download arm64 artifacts from Build workflow
-        uses: actions/download-artifact@v4
-        with:
-          name: snake-macos-arm64
-          path: artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # 检查下载的文件结构
+      - name: Check downloaded files
+        run: find artifacts -type f | sort
 
       # 检查下载的文件结构
       - name: Check downloaded files
@@ -54,12 +70,13 @@ jobs:
       # 打包仓库源码为tar.gz文件
       - name: Package repository source code
         run: |
-          # 创建仓库压缩包，文件名包含标签/分支名
-          git archive --format=tar.gz --output=snake-source-${GITHUB_REF_NAME}.tar.gz HEAD
+          # 创建仓库压缩包，文件名包含标签名
+          TAG_NAME="${{ steps.get_tag.outputs.tag_name || github.ref_name }}"
+          git archive --format=tar.gz --output=snake-source-${TAG_NAME}.tar.gz HEAD
           # 确保artifacts目录存在
           mkdir -p artifacts
           # 将源码压缩包移动到artifacts目录
-          mv snake-source-${GITHUB_REF_NAME}.tar.gz artifacts/
+          mv snake-source-${TAG_NAME}.tar.gz artifacts/
 
       # 列出所有artifacts，用于调试
       - name: List all artifacts
@@ -68,13 +85,13 @@ jobs:
       # 上传所有artifacts到GitHub Release
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref_name, 'v')
+        if: startsWith(steps.get_tag.outputs.tag_name || github.ref_name, 'v')
         with:
           files: |
-            artifacts/**/snake-macos-*.zip  # macOS平台的二进制构建产物
-            artifacts/snake-source-${{ github.ref_name }}.tar.gz  # 源码包
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+            artifacts/snake-macos-*.zip  # macOS平台的二进制构建产物
+            artifacts/snake-source-${{ steps.get_tag.outputs.tag_name || github.ref_name }}.tar.gz  # 源码包
+          tag_name: ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
+          name: Release ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
           draft: false
           prerelease: false
         env:
