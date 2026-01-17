@@ -32,11 +32,11 @@ jobs:
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: 'latest'
+          cmake-version: "latest"
 
       # 安装macOS依赖
       - name: Install dependencies (macOS)
-        run: brew install ncurses gcc
+        run: brew install ncurses
 
       # 配置构建目录
       - name: Configure CMake
