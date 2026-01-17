@@ -7,10 +7,6 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: [Build]
-    types: [completed]
-    branches: [main]
   push:
     tags: [v*]
 
@@ -24,10 +20,8 @@ jobs:
     # 只在macOS上运行
     runs-on: macos-latest
 
-    # 只在以下情况执行此任务：
-    # 1. 推送v开头的标签 (push事件)
-    # 2. 或者Build工作流成功完成且触发Build的事件是推送标签 (workflow_run事件)
-    if: (github.event_name == 'push' && startsWith(github.ref_name, 'v')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/v'))
+    # 只在推送v开头的标签时执行此任务
+    if: startsWith(github.ref_name, 'v')
     steps:
       # 检出代码（用于创建源码包）
       - name: Checkout repository
@@ -35,35 +29,58 @@ jobs:
         with:
           fetch-depth: 0 # 获取完整的git历史
 
-      # 获取当前事件的标签信息
+      # 获取当前标签名
       - name: Get tag information
         id: get_tag
+        run: echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+      # 安装依赖
+      - name: Install dependencies
+        run: brew install ncurses
+
+      # 设置CMake环境
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "latest"
+
+      # 构建项目（amd64架构）
+      - name: Build for amd64
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # 从触发Build工作流的引用中提取标签名
-            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
-            if [[ "$HEAD_BRANCH" == refs/tags/* ]]; then
-              TAG_NAME=${HEAD_BRANCH#refs/tags/}
-              echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-            fi
-          fi
+          mkdir -p build-amd64
+          cd build-amd64
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+          make -j$(nproc)
+          cd ..
 
-      # 分别下载不同架构的构建产物
-      - name: Download amd64 build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: snake-macos-amd64
-          path: artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # 构建项目（arm64架构）
+      - name: Build for arm64
+        run: |
+          mkdir -p build-arm64
+          cd build-arm64
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+          make -j$(nproc)
+          cd ..
 
-      - name: Download arm64 build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: snake-macos-arm64
-          path: artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # 准备构建产物
+      - name: Prepare artifacts
+        run: mkdir -p artifacts
+
+      # 打包amd64构建产物
+      - name: Package amd64 artifact
+        run: |
+          cp build-amd64/bin/snake artifacts/snake-macos-amd64
+          cd artifacts
+          zip -r ../snake-macos-amd64.zip snake-macos-amd64
+          mv ../snake-macos-amd64.zip .
+
+      # 打包arm64构建产物
+      - name: Package arm64 artifact
+        run: |
+          cp build-arm64/bin/snake artifacts/snake-macos-arm64
+          cd artifacts
+          zip -r ../snake-macos-arm64.zip snake-macos-arm64
+          mv ../snake-macos-arm64.zip .
 
       # 检查下载的文件结构
       - name: Check downloaded files
@@ -87,13 +104,12 @@ jobs:
       # 上传所有artifacts到GitHub Release
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
-        if: startsWith(steps.get_tag.outputs.tag_name || github.ref_name, 'v')
         with:
           files: |
-            artifacts/**/snake-macos-*.zip  # macOS平台的二进制构建产物（包括子目录中的文件）
-            artifacts/snake-source-${{ steps.get_tag.outputs.tag_name || github.ref_name }}.tar.gz  # 源码包
-          tag_name: ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
-          name: Release ${{ steps.get_tag.outputs.tag_name || github.ref_name }}
+            artifacts/snake-macos-*.zip  # macOS平台的二进制构建产物
+            artifacts/snake-source-${{ steps.get_tag.outputs.tag_name }}.tar.gz  # 源码包
+          tag_name: ${{ steps.get_tag.outputs.tag_name }}
+          name: Release ${{ steps.get_tag.outputs.tag_name }}
           draft: false
           prerelease: false
         env:
