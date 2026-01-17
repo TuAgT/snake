@@ -5,7 +5,7 @@ int main()
     // 设置locale，确保支持中文
     setlocale(LC_ALL, "");
 
-    // 初始化ncurses
+    // 初始化ncurses/PDcurses
     initscr();
     cbreak();
     noecho();

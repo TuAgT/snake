@@ -3,10 +3,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ncurses.h>
-#include <unistd.h>
 #include <time.h>
 #include <locale.h>
+
+// 跨平台兼容性处理
+#ifdef _WIN32
+// Windows 平台
+#include <pdcurses.h>
+#include <windows.h>
+#define usleep(ms) Sleep(ms / 1000) // Windows 没有 usleep，使用 Sleep 替代
+#else
+// Linux/macOS 平台
+#include <ncurses.h>
+#include <unistd.h>
+#endif
 
 #define WIDTH 20
 #define HEIGHT 20
