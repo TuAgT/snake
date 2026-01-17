@@ -14,6 +14,10 @@ on:
   push:
     tags: [v*]
 
+# 定义工作流所需的权限
+permissions:
+  contents: write # 需要写入内容的权限以创建Release
+
 jobs:
   # 发布作业
   release:
