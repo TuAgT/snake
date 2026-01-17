@@ -2,7 +2,7 @@
 # 此工作流负责在所有支持的平台上编译和打包贪吃蛇游戏
 # 支持的平台：Linux、macOS、Windows
 
-name: CMake Multi-Platform Build
+name: macOS Multi-Architecture Build
 
 on:
   push:
@@ -15,34 +15,14 @@ on:
 
 jobs:
   build:
-    # 使用GitHub Actions Marketplace中的多平台构建环境
-    runs-on: ${{ matrix.os }}
+    # 只在macOS上构建
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        # 为每个OS和架构组合创建独立任务
-        include:
-          # Linux平台架构支持
-          - os: ubuntu-latest
-            arch: amd64
-            compiler: gcc
-          - os: ubuntu-latest
-            arch: x86
-            compiler: gcc
-          - os: ubuntu-latest
-            arch: arm
-            compiler: gcc
-          # macOS平台架构支持
-          - os: macos-latest
-            arch: amd64
-            compiler: gcc
-          - os: macos-latest
-            arch: arm64
-            compiler: gcc
-          # Windows平台架构支持
-          - os: windows-latest
-            arch: amd64
-            compiler: gcc
+        # 只保留macOS的amd64和arm64架构
+        arch: [amd64, arm64]
+        compiler: [gcc]
 
     steps:
       # 检出代码
@@ -52,93 +32,48 @@ jobs:
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: "latest"
+          cmake-version: 'latest'
 
-      # 安装依赖
-      - name: Install dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          # 基础依赖
-          sudo apt-get install -y libncurses5-dev libncursesw5-dev gcc g++ cmake
-
-          # 根据架构安装额外的交叉编译工具链
-          if [ "${{ matrix.arch }}" = "arm" ]; then
-            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libncurses5-dev-armhf-cross
-          elif [ "${{ matrix.arch }}" = "x86" ]; then
-            sudo apt-get install -y gcc-multilib g++-multilib lib32ncurses5-dev
-
+      # 安装macOS依赖
       - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
         run: brew install ncurses gcc
-
-      - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-pdcurses mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
 
       # 配置构建目录
       - name: Configure CMake
         run: |
           mkdir -p build
           cd build
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows平台使用MSYS2 shell和MinGW Makefiles
-            msys2 -c "cd $GITHUB_WORKSPACE/build && cmake .. -G 'MinGW Makefiles' -DCMAKE_BUILD_TYPE=Release"
+          # 设置macOS架构
+          ARCH_FLAGS=""
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=arm64"
           else
-            # Linux/macOS平台设置架构
-            ARCH_FLAGS=""
-            # 处理不同架构名称映射
-            if [ "${{ matrix.arch }}" = "arm64" ]; then
-              ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=arm64"
-            elif [ "${{ matrix.arch }}" = "arm" ]; then
-              ARCH_FLAGS="-DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++"
-            elif [ "${{ matrix.arch }}" = "x86" ]; then
-              ARCH_FLAGS="-DCMAKE_C_COMPILER=gcc -m32 -DCMAKE_CXX_COMPILER=g++ -m32"
-            fi
-            cmake .. -DCMAKE_BUILD_TYPE=Release $ARCH_FLAGS
+            ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=x86_64"
           fi
+          cmake .. -DCMAKE_BUILD_TYPE=Release $ARCH_FLAGS
 
       # 执行构建
       - name: Build
         run: |
           cd build
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows平台使用MSYS2 shell和mingw32-make
-            msys2 -c "cd $GITHUB_WORKSPACE/build && mingw32-make -j$(nproc)"
-          else
-            # Linux/macOS平台使用make
-            make -j$(nproc)
-          fi
+          make -j$(nproc)
 
       # 准备构建产物
       - name: Prepare artifacts
         run: |
           mkdir -p artifacts
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows平台可执行文件带.exe扩展名
-            cp build/snake.exe artifacts/snake-${{ matrix.os }}-${{ matrix.arch }}.exe
-          else
-            # Linux/macOS平台可执行文件不带扩展名
-            cp build/snake artifacts/snake-${{ matrix.os }}-${{ matrix.arch }}
-          fi
+          # macOS平台可执行文件不带扩展名
+          cp build/snake artifacts/snake-macos-${{ matrix.arch }}
 
       # 打包构建产物
       - name: Package artifacts
         run: |
           cd artifacts
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            zip -r ../snake-${{ matrix.os }}-${{ matrix.arch }}.zip snake-${{ matrix.os }}-${{ matrix.arch }}.exe
-          else
-            zip -r ../snake-${{ matrix.os }}-${{ matrix.arch }}.zip snake-${{ matrix.os }}-${{ matrix.arch }}
-          fi
+          zip -r ../snake-macos-${{ matrix.arch }}.zip snake-macos-${{ matrix.arch }}
 
       # 上传构建产物
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: snake-${{ matrix.os }}-${{ matrix.arch }}
-          path: snake-${{ matrix.os }}-${{ matrix.arch }}.zip
+          name: snake-macos-${{ matrix.arch }}
+          path: snake-macos-${{ matrix.arch }}.zip
