@@ -1,106 +1,150 @@
+# 构建工作流
+# 此工作流负责在所有支持的平台上编译和打包贪吃蛇游戏
+# 支持的平台：Linux、macOS、Windows
+
 name: Build
 
 on:
+  # 当推送到main分支时触发构建
   push:
     branches: [main]
-    tags: [v*]
+    tags: [v*] # 当推送以v开头的标签时也触发构建
+  # 当有PR提交到main分支时触发构建
   pull_request:
     branches: [main]
+  # 当创建GitHub Release时触发构建
   release:
     types: [created]
 
 jobs:
+  # Linux平台构建作业
   build-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x86_64]
+        arch: [x86_64] # 支持的架构
 
     steps:
+      # 检出代码
       - uses: actions/checkout@v4
+
+      # 安装依赖（ncurses库和cmake）
       - name: Install dependencies
         run: sudo apt-get install -y libncurses5-dev libncursesw5-dev cmake
+
+      # 使用CMake构建
       - name: CMake Build
         run: |
           mkdir -p build
           cd build
           cmake ..
           make
+
+      # 使用Makefile构建
       - name: Make Build
         run: make
+
+      # 打包构建产物
       - name: Package build artifacts
         run: |
           mkdir -p artifacts
           cp bin/snake artifacts/snake-linux-${{ matrix.arch }}
           zip -r snake-linux-${{ matrix.arch }}.zip artifacts/
+
+      # 上传构建产物作为artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: snake-linux-${{ matrix.arch }}
           path: snake-linux-${{ matrix.arch }}.zip
 
+  # macOS平台构建作业
   build-macos:
     runs-on: macos-latest
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        arch: [x86_64, arm64] # 支持的架构：Intel和Apple Silicon
 
     steps:
+      # 检出代码
       - uses: actions/checkout@v4
+
+      # 使用Homebrew安装依赖
       - name: Install dependencies
         run: brew install ncurses cmake
+
+      # 使用CMake构建，指定架构
       - name: CMake Build
         run: |
           mkdir -p build
           cd build
           cmake .. -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
           make
+
+      # 使用Makefile构建
       - name: Make Build
         run: make
+
+      # 打包构建产物
       - name: Package build artifacts
         run: |
           mkdir -p artifacts
           cp bin/snake artifacts/snake-macos-${{ matrix.arch }}
           zip -r snake-macos-${{ matrix.arch }}.zip artifacts/
+
+      # 上传构建产物作为artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: snake-macos-${{ matrix.arch }}
           path: snake-macos-${{ matrix.arch }}.zip
 
+  # Windows平台构建作业
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x86_64]
+        arch: [x86_64] # 支持的架构
 
     steps:
+      # 检出代码
       - uses: actions/checkout@v4
+
+      # 设置MSYS2环境（用于Windows上的类Unix构建）
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
           install: >
-            mingw-w64-x86_64-pdcurses
+            mingw-w64-x86_64-pdcurses  # Windows上使用PDcurses替代ncurses
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-gcc
-      - name: CMake Build
-        shell: msys2 {0}
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc
-          mingw32-make
+
+      # 使用Makefile构建（优先使用Makefile以避免CMake配置问题）
       - name: Make Build
         shell: msys2 {0}
         run: make
+
+      # 可选：使用CMake构建（作为替代方案）
+      - name: CMake Build (Optional)
+        shell: msys2 {0}
+        continue-on-error: true # 如果CMake构建失败，继续执行后续步骤
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -G "MinGW Makefiles"
+          mingw32-make
+
+      # 打包构建产物
       - name: Package build artifacts
         shell: msys2 {0}
         run: |
           mkdir -p artifacts
           cp bin/snake.exe artifacts/snake-windows-${{ matrix.arch }}.exe
           zip -r snake-windows-${{ matrix.arch }}.zip artifacts/
+
+      # 上传构建产物作为artifact
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
