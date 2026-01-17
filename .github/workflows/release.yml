@@ -50,14 +50,20 @@ jobs:
             fi
           fi
 
-      # 下载Build工作流生成的所有平台构建产物
-      - name: Download all artifacts from Build workflow
-        uses: dawidd6/action-download-artifact@v2
+      # 分别下载不同架构的构建产物
+      - name: Download amd64 build artifacts
+        uses: actions/download-artifact@v4
         with:
-          workflow: build.yml
-          workflow_conclusion: success
-          commit: ${{ github.event.workflow_run.head_sha || github.sha }}
+          name: snake-macos-amd64
           path: artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download arm64 build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: snake-macos-arm64
+          path: artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # 检查下载的文件结构
       - name: Check downloaded files
