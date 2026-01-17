@@ -56,12 +56,8 @@ jobs:
         with:
           workflow: build.yml
           workflow_conclusion: success
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          commit: ${{ github.event.workflow_run.head_sha || github.sha }}
           path: artifacts
-
-      # 检查下载的文件结构
-      - name: Check downloaded files
-        run: find artifacts -type f | sort
 
       # 检查下载的文件结构
       - name: Check downloaded files
