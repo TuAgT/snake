@@ -54,10 +54,11 @@ jobs:
       # 上传所有artifacts到GitHub Release
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref_name, 'v')
         with:
           files: |
             artifacts/**/*.zip  # 所有平台的二进制构建产物
             artifacts/*.tar.gz  # 源码包
-          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub自动提供的令牌
