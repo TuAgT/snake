@@ -122,10 +122,8 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: >
-            mingw-w64-x86_64-pdcurses  # Windows上使用PDcurses替代ncurses
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-gcc
+          install: mingw-w64-x86_64-pdcurses mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
+      # 注意：Windows上使用PDcurses替代ncurses
 
       # 自动构建：优先使用CMake，失败时回退到Makefile
       - name: Automatic Build
