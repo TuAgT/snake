@@ -27,11 +27,11 @@ jobs:
     # 1. Build工作流成功完成
     # 2. 创建了GitHub Release
     # 3. 推送了以v开头的标签
-    if: |
-      ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      (github.event_name == 'release' && github.event.action == 'created') ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
-      startsWith(github.ref_name, 'v')
+    # if: |
+    #   ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+    #   (github.event_name == 'release' && github.event.action == 'created') ||
+    #   (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
+    #   startsWith(github.ref_name, 'v')
     steps:
       # 检出代码（用于创建源码包）
       - name: Checkout repository
