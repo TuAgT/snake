@@ -12,7 +12,9 @@ on:
     workflows: ["Build"]
     types:
       - completed
-    branches: [main]
+    # 只有当Build工作流在标签上运行时才触发
+    branches: []
+    tags: [v*]
   # 当推送以v开头的标签时触发（手动标签模式）
   push:
     tags: [v*]
@@ -29,9 +31,11 @@ jobs:
     # 2. 创建了GitHub Release
     # 3. 推送了以v开头的标签
     if: |
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
       (github.event_name == 'release' && github.event.action == 'created') ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
+      # 确保有标签
+      startsWith(github.ref, 'refs/tags/')
     steps:
       # 检出代码（用于创建源码包）
       - name: Checkout repository
