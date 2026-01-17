@@ -1,5 +1,7 @@
 # Snake
 
+[![Socialify](https://socialify.git.ci/TuAgT/snake/image?description=1&font=Rokkitt&language=1&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Dark)](https://github.com/TuAgT/snake)
+
 [![Language](https://img.shields.io/badge/Language-C-blue)](<https://en.wikipedia.org/wiki/C_(programming_language)>)
 [![Library](https://img.shields.io/badge/Library-ncurses-green)](https://en.wikipedia.org/wiki/Ncurses)
 [![Build](https://img.shields.io/badge/Build-CMake%20%26%20Makefile-orange)](https://cmake.org/)
